@@ -15,7 +15,7 @@ include <utils.scad>
 //
 //translate([0, 0, 25])
 //rotate([180, 0, 0])
-//stepper_motor_mount(17,slide_distance=0, mochup=false, tolerance=0);
+//stepper_motor_mount(17,slide_distance=0, mochup=true, tolerance=0);
 //
 // outer diameter of ring
 full_outer_diameter = 55;
@@ -24,9 +24,9 @@ D=full_outer_diameter - 8;
 T=12;
 // clearance
 tol=0.15;
-number_of_planets=4;
-number_of_teeth_on_planets=24;
-approximate_number_of_teeth_on_sun=16;
+number_of_planets=5;
+number_of_teeth_on_planets=25;
+approximate_number_of_teeth_on_sun=20;
 
 
 // pressure angle
@@ -35,7 +35,7 @@ P=45;//[30:60]
 nTwist=1;
 // width of hexagonal hole
 w=4;
-
+$fn=20;
 DR=0.5*1;// maximum depth ratio of teeth
 planetary_gears();
 
@@ -75,9 +75,9 @@ module planetary_gears() {
 			for (i = [45:90:359]) {
 				rotate([0, 180, i])
 				translate([22, 0, -17]) { //-11
-					translate([5, 0, 10])
-					rotate([0, 15, 0])
-					cylinder(r=1.5, h=10, $fn=20);
+					translate([4, 0, 8])
+					rotate([0, 18, 0])
+					cylinder(r=1.5, h=12, $fn=20);
 				}
 			}
 
@@ -91,7 +91,7 @@ module planetary_gears() {
 				for (i = [45:90:359]) {
 					rotate([0, 0, i])
 						translate([20, 0, 9])
-						cylinder(r=8, h=4);
+						cylinder(r=6, h=4);
 				}
 			}
 			translate([0, 0, -1])
@@ -105,8 +105,8 @@ module planetary_gears() {
 			for (i = [45:90:359]) {
 				rotate([0, 180, i])
 				translate([22, 0, -11]) { //-11
-					translate([0, 0, 11]) hole_through(name="M3", l=8, h=11);
-					translate([4, 0, 11]) hole_through(name="M3", l=0, h=9);
+					translate([0, 0, 11]) hole_through(name="M3", l=8, h=11,cld=0.4);
+					translate([4, 0, 6.5]) cube([13,6.5,9], center = true);
 					%screw("M3x8");
 				}
 			}
@@ -121,12 +121,12 @@ module planetary_gears() {
 				mirror([0,1,0])
 					herringbone(ns,pitch,P,DR,tol,helix_angle,T);
 					translate([0, 0, T/2])
-				cylinder(h=cone_height, r1=4.6, r2=9, $fn=40);
+				cylinder(h=cone_height, r1=5.2, r2=9, $fn=40);
 			}
 
 			// shaft hole
 			translate([0, 0, -T/2])
-				cylinder(r=2.55, h=24, $fn=40);
+				cylinder(r=5.4/2, h=24, $fn=40);
 			// nut holes
 			for (i = [0:120:360]) {
 				rotate([0, 0, i])
