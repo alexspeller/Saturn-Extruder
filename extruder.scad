@@ -1,5 +1,7 @@
-include <MCAD/stepper.scad>
-
+include <MCAD/bearing.scad>
+include <MCAD/motors.scad>
+include <nutsnbolts/cyl_head_bolt.scad>
+include <utils.scad>
 
 
 // Planetary gear bearing (customizable)
@@ -11,19 +13,22 @@ include <MCAD/stepper.scad>
 //http://www.torcbrain.de/uebersetzungsrechner-planetengetriebe/?lang=en
 //
 //
-translate([0, 0, 25])
-	#motor(Nema17, NemaMedium);
+//translate([0, 0, 25])
+//rotate([180, 0, 0])
+//stepper_motor_mount(17,slide_distance=0, mochup=false, tolerance=0);
+//
 // outer diameter of ring
-D=60;
+full_outer_diameter = 55;
+D=full_outer_diameter - 8;
 // thickness
-T=15;
+T=12;
 // clearance
 tol=0.15;
-number_of_planets=5;
-number_of_teeth_on_planets=22;
-approximate_number_of_teeth_on_sun=15;
+number_of_planets=4;
+number_of_teeth_on_planets=24;
+approximate_number_of_teeth_on_sun=16;
 
-ring_gear_teeth =  number_of_teeth_on_planets * 2 + approximate_number_of_teeth_on_sun;
+
 // pressure angle
 P=45;//[30:60]
 // number of teeth to twist across
@@ -39,32 +44,100 @@ module planetary_gears() {
 	np=round(number_of_teeth_on_planets);
 	ns1=approximate_number_of_teeth_on_sun;
 	k1=round(2/m*(ns1+np));
+
 	k= k1*m%2!=0 ? k1+1 : k1;
 	ns=k*m/2-np;
-	echo(ns);
 	nr=ns+2*np;
 	pitchD=0.9*D/(1+min(PI/(2*nr*tan(P)),PI*DR/nr));
 	pitch=pitchD*PI/nr;
-	echo(pitch);
 	helix_angle=atan(2*nTwist*pitch/T);
-	echo(helix_angle);
 
+	if(ns1 != ns) {
+		log_error(str("Sun gear teeth number was adjusted from ", ns1, " to ", ns));
+	}
+
+	echo(ring_gear_teeth=nr);
+	if(nr / m != round(nr / m)) {
+		log_error("Ring gear teeth is not evenly divisible by the number of planets");
+	}
+	if(ns / m != round(ns / m)) {
+		log_error(str("Sun gear teeth (", ns, ") is not evenly divisible by the number of planets"));
+	}
+
+	gear_ratio = 1 + nr / ns;
+	log_blue(str("Gear ratio is ", gear_ratio));
 	phi=$t*360/m;
 
 	translate([0,0,T/2]){
 		difference(){
-			cylinder(r=D/2,h=T,center=true,$fn=100);
+			cylinder(r=full_outer_diameter/2,h=T,center=true,$fn=100);
 			herringbone(nr,pitch,P,DR,-tol,helix_angle,T+0.2);
+			for (i = [45:90:359]) {
+				rotate([0, 180, i])
+				translate([22, 0, -17]) { //-11
+					translate([5, 0, 10])
+					rotate([0, 15, 0])
+					cylinder(r=1.5, h=10, $fn=20);
+				}
+			}
+
 		}
+
+		// stepper mount
+		translate([0, 0, T/2])
+		difference() {
+			union() {
+				cylinder(r1=full_outer_diameter/2, r2=49/2 - 4, h=13, $fn=100);
+				for (i = [45:90:359]) {
+					rotate([0, 0, i])
+						translate([20, 0, 9])
+						cylinder(r=8, h=4);
+				}
+			}
+			translate([0, 0, -1])
+			cylinder(r1=full_outer_diameter/2 - 6, r2=49/2 - 11, h=15, $fn=100);
+			translate([0, 0, -1])
+			for (i = [15:90:359]) {
+				rotate([0, 0, i])
+				arc(height=15, depth=20, radius=full_outer_diameter / 2 + 1, degrees=30);
+			}
+
+			for (i = [45:90:359]) {
+				rotate([0, 180, i])
+				translate([22, 0, -11]) { //-11
+					translate([0, 0, 11]) hole_through(name="M3", l=8, h=11);
+					translate([4, 0, 11]) hole_through(name="M3", l=0, h=9);
+					%screw("M3x8");
+				}
+			}
+
+		}
+
+		cone_height = 9;
 		// Sun gear
 		rotate([0,0,(np+1)*180/ns+phi*(ns+np)*2/ns])
 		difference(){
 			union() {
 				mirror([0,1,0])
 					herringbone(ns,pitch,P,DR,tol,helix_angle,T);
-				cylinder(h=14, r=10);
+					translate([0, 0, T/2])
+				cylinder(h=cone_height, r1=4.6, r2=9, $fn=40);
 			}
-			//cylinder(r=w/sqrt(3),h=T+1,center=true,$fn=6);
+
+			// shaft hole
+			translate([0, 0, -T/2])
+				cylinder(r=2.55, h=24, $fn=40);
+			// nut holes
+			for (i = [0:120:360]) {
+				rotate([0, 0, i])
+				translate([0, 0, cone_height + T/2 - 3.5])
+				rotate([0, 90]) {
+					translate([0, 0, -5.5])
+					rotate([0, 180, 0])
+					nutcatch_sidecut(name="M3", l=4.5);
+					hole_through(name="M3", l=8);
+				}
+			}
 		}
 
 		// planet gears
@@ -72,6 +145,11 @@ module planetary_gears() {
 			rotate([0,0,i*ns/m*360/np-phi*(ns+np)/np-phi])
 				difference() {
 					herringbone(np,pitch,P,DR,tol,helix_angle,T);
+					translate([0, 0, -T/2
+						])
+					bearing(model=623, outline=true,
+						material=Steel, sideMaterial=Brass);
+
 				}
 	}
 
@@ -103,7 +181,7 @@ module herringbone(
 	clearance=0,
 	helix_angle=0,
 	gear_thickness=5){
-union(){
+	union(){
 	gear(number_of_teeth,
 		circular_pitch,
 		pressure_angle,
@@ -179,7 +257,7 @@ intersection(){
 				base_radius,
 				min_radius,
 				outer_radius,
-				half_thick_angle);		
+				half_thick_angle);
 			mirror([0,1])halftooth (
 				pitch_angle,
 				base_radius,
@@ -228,3 +306,27 @@ function involute (base_radius, involute_angle) =
 	base_radius*(cos (involute_angle) + involute_angle*PI/180*sin (involute_angle)),
 	base_radius*(sin (involute_angle) - involute_angle*PI/180*cos (involute_angle))
 ];
+
+
+module arc( height, depth, radius, degrees ) {
+    // This dies a horible death if it's not rendered here
+    // -- sucks up all memory and spins out of control
+    render() {
+        difference() {
+            // Outer ring
+            rotate_extrude($fn = 100)
+                translate([radius - height, 0, 0])
+                    square([height,depth]);
+
+            // Cut half off
+            translate([0,-(radius+1),-.5])
+                cube ([radius+1,(radius+1)*2,depth+1]);
+
+            // Cover the other half as necessary
+            rotate([0,0,180-degrees])
+            translate([0,-(radius+1),-.5])
+                cube ([radius+1,(radius+1)*2,depth+1]);
+
+        }
+    }
+}
