@@ -2,6 +2,7 @@ include <MCAD/bearing.scad>
 include <MCAD/motors.scad>
 include <nutsnbolts/cyl_head_bolt.scad>
 include <utils.scad>
+use <MCAD/hardware.scad>
 
 
 // Planetary gear bearing (customizable)
@@ -18,15 +19,21 @@ include <utils.scad>
 //stepper_motor_mount(17,slide_distance=0, mochup=true, tolerance=0);
 //
 // outer diameter of ring
-full_outer_diameter = 55;
+full_outer_diameter = 65;
 D=full_outer_diameter - 8;
 // thickness
 T=12;
 // clearance
 tol=0.15;
-number_of_planets=5;
-number_of_teeth_on_planets=25;
-approximate_number_of_teeth_on_sun=20;
+number_of_planets=3;
+number_of_teeth_on_planets=15;
+approximate_number_of_teeth_on_sun=9;
+//number_of_planets=4;
+//number_of_teeth_on_planets=14;
+//approximate_number_of_teeth_on_sun=8;
+
+pushfitsize = 10.5;
+pushfitpitch = 0.907;
 
 
 // pressure angle
@@ -37,7 +44,185 @@ nTwist=1;
 w=4;
 $fn=20;
 DR=0.5*1;// maximum depth ratio of teeth
-planetary_gears();
+//% planet_carrier();
+//translate([0, 0, 15]) idler();
+translate([0, 0, 5]) rotate([180, 0, 0])planetary_gears();
+//top_case();
+//filament();
+
+module filament() {
+	%translate([-50, 6.9, 22.5])
+	rotate([0, 90, 0])
+	cylinder(r=1.5, h=100);
+}
+
+
+module top_case() {
+/*	difference() {
+		translate([0, 0, 5])
+			cylinder(r=full_outer_diameter / 2, h=34, $fn=100);
+
+		translate([0, 0, 4])
+			cylinder(r=full_outer_diameter / 2 - 6.5, h=36, $fn=100);
+		rotate([0, 0, -10])
+		translate([10, -45, 4])
+			cube([16,80,36]);
+	}
+*/
+	
+	cube([10, 10, 10]);
+
+	translate([-15, 6.9, 22.5])
+	rotate([0, 90, 0])
+	rod( 5, true, renderrodthreads=true, rodsize=pushfitsize, rodpitch=pushfitpitch );
+}
+
+
+module idler() {
+		%translate([0, 19.4, 4]) bearing(model=608);
+		%translate([17, 23, 25])
+		screw("M3x40");
+		//filament
+	difference() {
+
+		cylinder(r=full_outer_diameter / 2, h=15, $fn=100);
+			rotate([0, 0, -10])
+			translate([24, -25, -0.5])
+			cube([10,50,16]);
+
+		rotate([0, 0, -10])
+			translate([-35, -35, -0.5])
+			cube([45,53.4,16]);
+
+		rotate([0, 0, -10])
+		translate([-37, -35, -0.5])
+			cube([20,80,16]);
+
+		translate([0, 19.4, 3.8]) scale(1.05) bearing(model=608, outline=true);
+		//#translate([0, 19, 10]) scale(1.05) bearing(model=608, outline=true);
+
+		// filament hole
+		translate([-20, 6.9, 7.5])
+		rotate([0, 90, 0])
+		cylinder(r=1.8, h=60);
+
+		translate([23.1, 6.9, 7.5])
+		rotate([0, 90, 0])
+		cylinder(r1=1.8, r2=3, h=3);
+
+		// pivot
+		translate([17, 23, 0])
+			cylinder(r=1.55, h=15);
+
+		// axle
+		translate([0, 19, 1])
+		cylinder(r=4, h=13);
+		translate([0, 19, 1])
+		%cylinder(r=4, h=13);
+	}
+	// handle
+	difference() {
+		union() {
+			rotate([0, 0, -10])
+			translate([10, -40, 0])
+				cube([14, 20, 15]);
+			rotate([0, 0, -10])
+			translate([12.3, -40, 0])
+				cylinder(h=15, r=2.3);
+		}
+
+		translate([36, -50.9, -0.5])
+			cylinder(h=16, r=30, $fn=100);
+	}
+}
+
+module bolt() {
+	gear2_bolt_hex_d       = 12.8;
+	gear2_bolt_hex_r        = gear2_bolt_hex_d/2;
+
+	translate([0, 0, 5.3])
+		cylinder(h=25, r=4);
+		cylinder(r=gear2_bolt_hex_r  / cos(180 / 6), h=5.3, $fn=6);
+
+}
+
+module pulley() {
+	translate([0, 0, 6.8])
+	cylinder(r=11.35/2, h=3.5);
+	difference() {
+		cylinder(h=12.6, r=13.2 / 2);
+		translate([0, 0, 6.8])
+			cylinder(r=13.3/2, h=3.5);
+	}
+}
+
+module planet_carrier() {
+	m=round(number_of_planets);
+	np=round(number_of_teeth_on_planets);
+	ns1=approximate_number_of_teeth_on_sun;
+	k1=round(2/m*(ns1+np));
+
+	k= k1*m%2!=0 ? k1+1 : k1;
+	ns=k*m/2-np;
+	nr=ns+2*np;
+	pitchD=0.9*D/(1+min(PI/(2*nr*tan(P)),PI*DR/nr));
+	pitch=pitchD*PI/nr;
+	helix_angle=atan(2*nTwist*pitch/T);
+	phi=$t*360/m;
+
+	difference() {
+		union() {
+			// carrier body
+			translate([0, 0, 6])
+			cylinder(r=pitchD/2 - 2, h=3);
+
+			translate([0, 0, 9]) {
+				%bolt();
+				//pully
+				% translate([0, 0, 22]) rotate([180,0,0]) pulley();
+				// bolt restraint
+				//%translate([0, 0, 21]) bearing(model=608);
+				// bolt fitting
+				difference() {
+					cylinder(r=11, h=5.3);
+					bolt();
+				}
+			}
+
+			for(i=[1:m])rotate([0,0,i*360/m+phi])translate([pitchD/2*(ns+np)/nr,0,0])
+				rotate([0,0,i*ns/m*360/np-phi*(ns+np)/np-phi])
+					union() {
+						translate([0, 0, 1])
+						%bearing(model=623, outline=false, sideMaterial=Brass);
+						// grubscrew holder
+						translate([0, 0, 9])
+						cylinder(h=4, r=6);
+					}
+		}
+
+		for(i=[1:m]) {
+			rotate([0,0,i*360/m+phi])translate([pitchD/2*(ns+np)/nr,0,0])
+			rotate([0,0,i*ns/m*360/np-phi*(ns+np)/np-phi]) {
+				union() {
+					//%bearing(model=624, outline=false, sideMaterial=Brass);
+					// grubscrew
+					translate([0, 0, 7.4])
+						nut("M3");
+					%translate([0, 0, 7.4])
+						nut("M3");
+					translate([0, 0, 10])
+					%screw("M3x8");
+					translate([0, 0, 20-7])
+						hole_through("M3", l=8, h=10-7);
+				}
+
+			}
+		}
+
+	}
+
+
+}
 
 module planetary_gears() {
 	m=round(number_of_planets);
@@ -72,14 +257,6 @@ module planetary_gears() {
 		difference(){
 			cylinder(r=full_outer_diameter/2,h=T,center=true,$fn=100);
 			herringbone(nr,pitch,P,DR,-tol,helix_angle,T+0.2);
-			for (i = [45:90:359]) {
-				rotate([0, 180, i])
-				translate([22, 0, -17]) { //-11
-					translate([4, 0, 8])
-					rotate([0, 18, 0])
-					cylinder(r=1.5, h=12, $fn=20);
-				}
-			}
 
 		}
 
@@ -95,17 +272,17 @@ module planetary_gears() {
 				}
 			}
 			translate([0, 0, -1])
-			cylinder(r1=full_outer_diameter/2 - 6, r2=49/2 - 11, h=15, $fn=100);
+			cylinder(r1=full_outer_diameter/2 - 6, r2=49/2 - 6, h=15, $fn=100);
 			translate([0, 0, -1])
-			for (i = [15:90:359]) {
-				rotate([0, 0, i])
-				arc(height=15, depth=20, radius=full_outer_diameter / 2 + 1, degrees=30);
+			for (i = [15:180:359]) {
+				//rotate([0, 0, i])
+				//arc(height=15, depth=20, radius=full_outer_diameter / 2 + 1, degrees=30);
 			}
 
 			for (i = [45:90:359]) {
 				rotate([0, 180, i])
 				translate([22, 0, -11]) { //-11
-					translate([0, 0, 11]) hole_through(name="M3", l=8, h=11,cld=0.4);
+					translate([0, 0, 11]) hole_through(name="M3", l=8, h=11,cld=0.15);
 					translate([4, 0, 6.5]) cube([13,6.5,9], center = true);
 					%screw("M3x8");
 				}
@@ -147,6 +324,7 @@ module planetary_gears() {
 					herringbone(np,pitch,P,DR,tol,helix_angle,T);
 					translate([0, 0, -T/2
 						])
+					scale(1.02)
 					bearing(model=623, outline=true,
 						material=Steel, sideMaterial=Brass);
 
