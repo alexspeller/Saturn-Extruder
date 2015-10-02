@@ -35,6 +35,10 @@ approximate_number_of_teeth_on_sun=9;
 pushfitsize = 10.5;
 pushfitpitch = 0.907;
 
+spring_compressed_length = 13;
+spring_outer_diameter = 7.5;
+spring_inner_diameter = 5.5;
+spring_stud_radius = (spring_inner_diameter-0.8) / 2;
 
 // pressure angle
 P=45;//[30:60]
@@ -44,24 +48,61 @@ nTwist=1;
 w=4;
 $fn=20;
 DR=0.5*1;// maximum depth ratio of teeth
-//planet_carrier();
-//translate([0, 0, 15]) idler();
-translate([0, 0, 5]) rotate([180, 0, 0]) planetary_gears();
-top_case();
-//idler_brace();
-//filament();
+
+
+assembly();
+
+module assembly() {
+	planet_carrier();
+	translate([0, 0, 15]) idler();
+	translate([0, 0, 5]) rotate([180, 0, 0]) planetary_gears();
+	top_case();
+	idler_brace();
+	filament();
+}
 
 //binding_screws();
 
-module binding_screws() {
-	// screws for top
+module screws_for_top() {
 	for(r=[-20,-135,130]) {
 		rotate([0, 0, r])
-		translate([29.3, 0, 50]) {
-			screw("M3x20");
+		translate([29.3, 0, 0]) {
+			rotate([180, 0, 0]) {
+				%screw("M3x16");
+				translate([0, 0, 16])
+				hole_through("M3", l=16, h=16);
+				translate([0, 0, -9])
+				nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
+			}
 		}
 	}
+
+}
+
+module screws_for_brace() {	
+	for(r=[25, 100]) {
+		rotate([0, 0, r])
+		translate([29.3, 0, 0]) {
+			rotate([180, 0, 0]) {
+
+				%screw("M3x12");
+				translate([0, 0, 15])
+				hole_through("M3", l=12, h=15);
+				translate([0, 0, -9])
+				nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
+			}
+		}
+	}
+}
+
+module binding_screws() {
+	// screws for top
+	//
+	%screws_for_top();
 	// screws for idler brace
+	//
+
+	%screws_for_brace();
 }
 
 
@@ -70,7 +111,7 @@ module idler_brace() {
 		union() {
 			translate([0, 0, 5])
 				cylinder(r=full_outer_diameter / 2, h=9, $fn=100);
-			translate([17, 23, 14])
+			translate([14, 26, 14])
 				cylinder(r=3, h=1);
 		}
 
@@ -91,25 +132,17 @@ module idler_brace() {
 		translate([-68.7, 17, 4])
 			cube([50,17,36]);
 
-		translate([17, 23, 34]) {
+		translate([14, 26, 34]) {
 			%screw("M3x25");
 			translate([0, 0, 30])
-			hole_through("M3", l=20, h=30);
+			hole_through("M3", l=25, h=30);
 			translate([0, 0, -22.5])
 			rotate([0, 0, 45])
-			nutcatch_sidecut(name="M3", l=4.5);
+			nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
 		}
 
+		screws_for_brace();
 
-		for(r=[25, 100]) {
-			rotate([0, 0, r])
-			translate([29.3, 0, 10]) {
-				%screw("M3x12");
-				translate([0, 0, 12])
-				%hole_through("M3", l=12, h=12);
-				//nutcatch_sidecut(name="M3", l=4.5);
-			}
-		}
 
 
 
@@ -127,27 +160,27 @@ module top_case() {
 	h = 32;
 
 	%translate([0, 0, 31]) bearing(model=608);
-	
+
 	difference() {
 		union() {
 
 			// spring
 			%translate([0, 0, 40])
 			rotate([0, 90, -10])
-			translate([17.5, -26.5,-6])
-			cylinder(r=9/2, h=16);
+			translate([17.5, -26.5, 10 - spring_compressed_length])
+			cylinder(r=spring_outer_diameter / 2, h=spring_compressed_length);
 
 			// spring stud
-			translate([-10, -10, 22.5])
+			translate([-6, -10, 22.5])
 			rotate([0, 90, -10])
-			translate([0, -15, 2])
-			cylinder(h=2, r=7/2);
+			translate([0, -15, 14 - spring_compressed_length])
+			cylinder(h=2, r=spring_stud_radius);
 
 			difference() {
 				translate([-15, -30, 17])
 				rotate([0, 0, -10])
-				translate([-8, 0, 0])
-					cube([12,15,20]);
+				translate([6 - spring_compressed_length, 0, 0])
+					cube([14,15,20]);
 
 				translate([-32, -28, 16])
 				rotate([0, 0, -30])
@@ -158,8 +191,8 @@ module top_case() {
 			//lid
 			difference() {
 				union() {
-					translate([0, 0, 37])
-					cylinder(r=full_outer_diameter/2, h=3, $fn=100);
+				//	translate([0, 0, 37])
+					//cylinder(r=full_outer_diameter/2, h=3, $fn=100);
 					translate([0, 0, 32])
 					cylinder(r=15, h=5);
 				}
@@ -172,7 +205,7 @@ module top_case() {
 				union() {
 					translate([0, 0, 31])
 						cylinder(r=full_outer_diameter / 2, h=8, $fn=100);
-					translate([17, 23, 30])
+					translate([14, 26, 30])
 						cylinder(r=3, h=1);
 
 				}
@@ -191,8 +224,8 @@ module top_case() {
 					cylinder(r=full_outer_diameter / 2 - 6.5, h=36, $fn=100);
 
 				rotate([0, 0, -10])
-				translate([-5.6, -45, 14])
-					cube([31.5,44,36]);
+				translate([10.4 - spring_compressed_length, -45, 14]) //-5.6
+					cube([15.5 + spring_compressed_length,44,36]);
 
 
 				translate([-64.5, -2.2, 4])
@@ -208,7 +241,7 @@ module top_case() {
 					cube([50,17,36]);
 			}
 			//arms
-			
+
 			difference() {
 				union() {
 					translate([-30, -12, 15])
@@ -255,36 +288,24 @@ module top_case() {
 
 		}
 
-		translate([17, 23, 34]) {
+		translate([14, 26, 34]) {
 			%screw("M3x25");
 			translate([0, 0, 30])
 			hole_through("M3", l=20, h=30);
 		}
 
-
-		for(r=[-20,-135,130]) {
-			rotate([0, 0, r])
-			translate([29.3, 0, 18]) {
-				%screw("M3x20");
-				translate([0, 0, 30])
-				hole_through("M3", l=20, h=30);
-				translate([0, 0, -16])
-				nutcatch_sidecut(name="M3", l=4.5);
-
-			}
-		}
-
+		screws_for_top();
 	}
 
 }
 
 
 module idler() {
-		%translate([0, 19.4, 4]) bearing(model=608);
-	%translate([17, 23, 19]) {
+	%translate([0, 19.4, 4]) bearing(model=608);
+	%translate([14, 26, 19]) {
 		screw("M3x25");
 		translate([0, 0, 30])
-		hole_through("M3", l=20, h=30);
+		hole_through("M3", l=40, h=30);
 	}
 
 		//filament
@@ -316,7 +337,7 @@ module idler() {
 		cylinder(r1=1.8, r2=3, h=3);
 
 		// pivot
-		translate([17, 23, 0])
+		translate([14, 26, 0])
 			cylinder(r=1.55, h=15);
 
 		// axle
@@ -330,7 +351,7 @@ module idler() {
 	translate([-10, -10, 7.5])
 	rotate([0, 90, -10])
 	translate([0, -15, 16.2])
-	cylinder(h=2, r=7/2);
+	cylinder(h=2, r=spring_stud_radius);
 	// handle
 	difference() {
 		union() {
@@ -465,7 +486,7 @@ module planetary_gears() {
 	gear_ratio = 1 + nr / ns;
 	log_blue(str("Gear ratio is ", gear_ratio));
 	phi=$t*360/m;
-
+	difference() {
 	translate([0,0,T/2]){
 		// 1515 mount
 		difference() {
@@ -483,32 +504,6 @@ module planetary_gears() {
 			cylinder(r=full_outer_diameter/2,h=T,center=true,$fn=100);
 			herringbone(nr,pitch,P,DR,-tol,helix_angle,T+0.2);
 
-
-			translate([0, 0, -1])rotate([-180, 0, 0]) {
-
-					for(r=[25, 100]) {
-						rotate([0, 0, r])
-						translate([29.3, 0, 10]) {
-							translate([0, 0, 12])
-							hole_through("M3", l=12, h=12);
-							translate([0, 0, -8])
-							nutcatch_sidecut(name="M3", l=4.5);
-						}
-					}
-
-					for(r=[-20,-135,130]) {
-						rotate([0, 0, r])
-						translate([29.3, 0, 18]) {
-							%screw("M3x20");
-							translate([0, 0, 30])
-							hole_through("M3", l=20, h=30);
-							translate([0, 0, -16])
-							nutcatch_sidecut(name="M3", l=4.5);
-
-						}
-					}
-
-				}
 		}
 
 		// stepper mount
@@ -549,7 +544,7 @@ module planetary_gears() {
 				mirror([0,1,0])
 					herringbone(ns,pitch,P,DR,tol,helix_angle,T);
 					translate([0, 0, T/2])
-				cylinder(h=cone_height, r1=5.2, r2=9, $fn=40);
+				cylinder(h=cone_height, r1=5.2, r2=10, $fn=40);
 			}
 
 			// shaft hole
@@ -562,7 +557,7 @@ module planetary_gears() {
 				rotate([0, 90]) {
 					translate([0, 0, -5.5])
 					rotate([0, 180, 0])
-					nutcatch_sidecut(name="M3", l=4.5);
+					nutcatch_sidecut(name="M3", l=4.5, clh=0.1);
 					hole_through(name="M3", l=8);
 				}
 			}
@@ -574,12 +569,20 @@ module planetary_gears() {
 				difference() {
 					herringbone(np,pitch,P,DR,tol,helix_angle,T);
 					translate([0, 0, -T/2
-						])
-					scale(1.02)
-					bearing(model=623, outline=true,
-						material=Steel, sideMaterial=Brass);
+						]) {
+						scale(1.04)
+						bearing(model=623, outline=true,
+							material=Steel, sideMaterial=Brass);
+					}
 
 				}
+	}
+	translate([0, 0, 5])rotate([-180, 0, 0]) {
+			screws_for_brace();
+			screws_for_top();
+
+		}
+
 	}
 
 }
