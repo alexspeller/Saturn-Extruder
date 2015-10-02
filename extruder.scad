@@ -53,101 +53,30 @@ DR=0.5*1;// maximum depth ratio of teeth
 assembly();
 
 module assembly() {
-	planet_carrier();
-	translate([0, 0, 15]) idler();
+	//planet_carrier();
+	//translate([0, 0, 15]) idler();
 	translate([0, 0, 5]) rotate([180, 0, 0]) planetary_gears();
 	top_case();
-	idler_brace();
 	filament();
 }
 
-//binding_screws();
 
 module screws_for_top() {
-	for(r=[-20,-135,130]) {
+	for(r=[45:90:360]) {
 		rotate([0, 0, r])
 		translate([29.3, 0, 0]) {
 			rotate([180, 0, 0]) {
-				%screw("M3x16");
-				translate([0, 0, 16])
-				hole_through("M3", l=16, h=16);
-				translate([0, 0, -9])
-				nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
-			}
-		}
-	}
-
-}
-
-module screws_for_brace() {	
-	for(r=[25, 100]) {
-		rotate([0, 0, r])
-		translate([29.3, 0, 0]) {
-			rotate([180, 0, 0]) {
-
 				%screw("M3x12");
-				translate([0, 0, 15])
-				hole_through("M3", l=12, h=15);
+				translate([0, 0, 16])
+				hole_through("M3", l=12, h=16);
 				translate([0, 0, -9])
 				nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
 			}
 		}
 	}
+
 }
 
-module binding_screws() {
-	// screws for top
-	//
-	%screws_for_top();
-	// screws for idler brace
-	//
-
-	%screws_for_brace();
-}
-
-
-module idler_brace() {
-	difference() {
-		union() {
-			translate([0, 0, 5])
-				cylinder(r=full_outer_diameter / 2, h=9, $fn=100);
-			translate([14, 26, 14])
-				cylinder(r=3, h=1);
-		}
-
-		translate([0, 0, 4])
-			cylinder(r=full_outer_diameter / 2 - 6.5, h=36, $fn=100);
-
-		translate([-40, -60, 4])
-			cube([50,80,36]);
-		translate([-40, -60, 4])
-		rotate([0, 0, 20])
-			cube([50,80,36]);
-
-		translate([0, -72.5, 4])
-		rotate([0, 0, -10])
-			cube([50,80,36]);
-
-		rotate([0, 0, -10])
-		translate([-68.7, 17, 4])
-			cube([50,17,36]);
-
-		translate([14, 26, 34]) {
-			%screw("M3x25");
-			translate([0, 0, 30])
-			hole_through("M3", l=25, h=30);
-			translate([0, 0, -22.5])
-			rotate([0, 0, 45])
-			nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
-		}
-
-		screws_for_brace();
-
-
-
-
-	}
-}
 
 module filament() {
 	%translate([-50, 6.9, 22.5])
@@ -191,8 +120,8 @@ module top_case() {
 			//lid
 			difference() {
 				union() {
-				//	translate([0, 0, 37])
-					//cylinder(r=full_outer_diameter/2, h=3, $fn=100);
+					translate([0, 0, 37])
+						cylinder(r=full_outer_diameter/2, h=3, $fn=100);
 					translate([0, 0, 32])
 					cylinder(r=15, h=5);
 				}
@@ -212,6 +141,43 @@ module top_case() {
 
 				translate([0, 0, 4])
 					cylinder(r=full_outer_diameter / 2 - 6.5, h=36, $fn=100);
+
+			}
+
+			// bottom idler brace
+			difference() {
+				union() {
+					translate([0, 0, 5])
+						cylinder(r=full_outer_diameter / 2, h=9, $fn=100);
+					translate([14, 26, 14])
+						cylinder(r=3, h=1);
+				}
+
+				translate([0, 0, 4])
+					cylinder(r=full_outer_diameter / 2 - 6.5, h=36, $fn=100);
+
+				translate([-40, -60, 4])
+					cube([50,80,36]);
+				translate([-40, -60, 4])
+				rotate([0, 0, 20])
+					cube([50,80,36]);
+
+				translate([0, -72.5, 4])
+				rotate([0, 0, -10])
+					cube([50,79,36]);
+
+				rotate([0, 0, -10])
+				translate([-70, 17, 4])
+					cube([50,17,36]);
+
+				translate([14, 26, 34]) {
+					%screw("M3x25");
+					translate([0, 0, 30])
+					hole_through("M3", l=25, h=30);
+					translate([0, 0, -22.5])
+					rotate([0, 0, 45])
+					nutcatch_sidecut(name="M3", l=4.5, clh=0.2);
+				}
 
 			}
 
@@ -578,7 +544,6 @@ module planetary_gears() {
 				}
 	}
 	translate([0, 0, 5])rotate([-180, 0, 0]) {
-			screws_for_brace();
 			screws_for_top();
 
 		}
