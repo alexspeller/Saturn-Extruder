@@ -4,6 +4,24 @@ include <nutsnbolts/cyl_head_bolt.scad>;
 include <utils.scad>;
 use <MCAD/hardware.scad>;
 use <saturn.ttf>;
+
+
+
+// If you have a different spring you can change it here.
+// Compressed length is the lenght of the spring at its most extended,
+// whilst pushing against the idler. When compressed to that length, it
+// should exert a good deal of force against the idler
+
+spring_compressed_length = 13;
+spring_outer_diameter = 7.5;
+spring_inner_diameter = 5.5;
+spring_stud_radius = (spring_inner_diameter-0.8) / 2;
+
+// fits standard 3mm push fit connectors
+pushfitsize = 10.5;
+pushfitpitch = 0.907;
+
+// Gear settings - you probably don't want to mess with these
 // Planetary gear bearing (customizable)
 //https://woodgears.ca/gear/planetary.html
 //
@@ -31,14 +49,6 @@ approximate_number_of_teeth_on_sun=9;
 //number_of_teeth_on_planets=14;
 //approximate_number_of_teeth_on_sun=8;
 
-pushfitsize = 10.5;
-pushfitpitch = 0.907;
-
-spring_compressed_length = 13;
-spring_outer_diameter = 7.5;
-spring_inner_diameter = 5.5;
-spring_stud_radius = (spring_inner_diameter-0.8) / 2;
-
 // pressure angle
 P=45;//[30:60]
 // number of teeth to twist across
@@ -49,11 +59,19 @@ $fn=20;
 DR=0.5*1;// maximum depth ratio of teeth
 
 
-assembly();
+plate_for_printing();
+
+module plate_for_printing() {
+	translate([20, 20, 0]) planet_carrier();
+	translate([40, -40, 0]) planetary_gears();
+	translate([-30, -30, 0]) idler();
+	translate([-40, 40, 40])
+	rotate([180, 0, 0]) top_case();
+}
 
 module assembly() {
-	//planet_carrier();
-	//translate([0, 0, 15]) idler();
+	planet_carrier();
+	translate([0, 0, 15]) idler();
 	translate([0, 0, 5]) rotate([180, 0, 0]) planetary_gears();
 	top_case();
 	filament();
@@ -292,6 +310,10 @@ module top_case() {
 		translate([0, -16, 39.5])
 		linear_extrude(height = 0.5) {
 			text("Saturn", font="Saturn\\-Regular:style=Regular", halign="center", size=8.5);
+		}
+		translate([23.3, -20, 39.5])
+		linear_extrude(height = 0.5) {
+			text("extruder", font="Saturn\\-Regular:style=Regular", halign="right", size=3);
 		}
 
 		screws_for_top();
