@@ -1,10 +1,9 @@
-include <MCAD/bearing.scad>
-include <MCAD/motors.scad>
-include <nutsnbolts/cyl_head_bolt.scad>
-include <utils.scad>
-use <MCAD/hardware.scad>
-
-
+include <MCAD/bearing.scad>;
+include <MCAD/motors.scad>;
+include <nutsnbolts/cyl_head_bolt.scad>;
+include <utils.scad>;
+use <MCAD/hardware.scad>;
+use <saturn.ttf>;
 // Planetary gear bearing (customizable)
 //https://woodgears.ca/gear/planetary.html
 //
@@ -260,6 +259,41 @@ module top_case() {
 			hole_through("M3", l=20, h=30);
 		}
 
+		//logo
+		difference() {
+			translate([0, 18, 30])
+				cylinder(r=9,h=20);
+		
+			translate([0, 18, 0])
+			rotate([0, 0, -20])
+			scale([2, 0.4, 1])
+			difference() {
+			translate([0, 0, 30])
+				cylinder(r=9,h=20);
+			translate([0, 0, 30])
+				cylinder(r=7,h=20);
+			}
+		}
+		difference() {
+			translate([0, 18, 0])
+			rotate([0, 0, -20])
+			scale([2, 0.4, 1])
+			difference() {
+			translate([0, 0, 39.5])
+				cylinder(r=9,h=20);
+			translate([0, 0, 39.5])
+				cylinder(r=7,h=20);
+			}
+			translate([0, 20, 30])
+				cylinder(r=8,h=20);
+
+		}
+
+		translate([0, -16, 39.5])
+		linear_extrude(height = 0.5) {
+			text("Saturn", font="Saturn\\-Regular:style=Regular", halign="center", size=8.5);
+		}
+
 		screws_for_top();
 	}
 
@@ -372,7 +406,7 @@ module planet_carrier() {
 		union() {
 			// carrier body
 			translate([0, 0, 6])
-			cylinder(r=pitchD/2 - 2, h=3);
+			cylinder(r=pitchD/2 - 1 - 2, h=3, $fn=100);
 
 			translate([0, 0, 9]) {
 				%bolt();
